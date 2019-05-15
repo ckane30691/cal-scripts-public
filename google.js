@@ -78,8 +78,8 @@ function listEvents(auth) {
   calendar.events.list(
     {
       calendarId: "primary",
-      timeMin: moment().startOf("week").toDate(),
-      timeMax: moment().endOf("week").toDate(),
+      timeMin: moment().add(1, "week").startOf("week").toDate(),
+      timeMax: moment().add(1, "week").endOf("week").toDate(),
       maxResults: 1000,
       singleEvents: true,
       orderBy: "startTime"
