@@ -2,6 +2,8 @@ const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
 const moment = require("moment")
+const { getBlocks } = require("./helpers");
+
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 // The file token.json stores the user's access and refresh tokens, and is
@@ -78,8 +80,8 @@ function listEvents(auth) {
   calendar.events.list(
     {
       calendarId: "primary",
-      timeMin: moment().startOf("week").toDate(),
-      timeMax: moment().endOf("week").toDate(),
+      timeMin: moment().add(1, "week").startOf("week").toDate(),
+      timeMax: moment().add(1, "week").endOf("week").toDate(),
       maxResults: 1000,
       singleEvents: true,
       orderBy: "startTime"
@@ -87,6 +89,14 @@ function listEvents(auth) {
     (err, res) => {
       if (err) return console.log("The API returned an error: " + err);
       const events = res.data.items;
+      const blocks = getBlocks(events)
+      blocks.forEach(day => {
+        console.log("\n\n");
+        day.forEach(block => {
+          console.log(moment(block).format("dddd Do hh:mmA"))
+        })
+      })
+      debugger
       if (events.length) {
         console.log("Upcoming 10 events:");
         events.map((event, i) => {
