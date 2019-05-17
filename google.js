@@ -1,8 +1,16 @@
 const fs = require("fs");
 const readline = require("readline");
 const { google } = require("googleapis");
-const moment = require("moment")
-const { getBlocks } = require("./helpers");
+const moment = require("moment");
+const {
+  getBlocks,
+  pickBlocks,
+  logAndComfirm,
+  inviteAll,
+  appendFile,
+  sendInvite
+} = require("./helpers");
+const emails = require("./emailsToInvite");
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
@@ -75,36 +83,43 @@ function getAccessToken(oAuth2Client, callback) {
  * Lists the next 10 events on the user's primary calendar.
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-function listEvents(auth) {
+async function listEvents(auth) {
   const calendar = google.calendar({ version: "v3", auth });
   calendar.events.list(
     {
       calendarId: "primary",
-      timeMin: moment().add(1, "week").startOf("week").toDate(),
-      timeMax: moment().add(1, "week").endOf("week").toDate(),
+      timeMin: moment()
+        .add(1, "week")
+        .startOf("week")
+        .toDate(),
+      timeMax: moment()
+        .add(1, "week")
+        .endOf("week")
+        .toDate(),
       maxResults: 1000,
       singleEvents: true,
       orderBy: "startTime"
     },
-    (err, res) => {
+    async (err, res) => {
       if (err) return console.log("The API returned an error: " + err);
       const events = res.data.items;
-      const blocks = getBlocks(events)
-      blocks.forEach(day => {
-        console.log("\n\n");
-        day.forEach(block => {
-          console.log(moment(block).format("dddd Do hh:mmA"))
-        })
-      })
-      debugger
-      if (events.length) {
-        console.log("Upcoming 10 events:");
-        events.map((event, i) => {
-          const start = event.start.dateTime || event.start.date;
-          console.log(`${start} - ${event.summary}`);
-        });
-      } else {
-        console.log("No upcoming events found.");
+      const blocks = getBlocks(events);
+      // const response = await sendInvite(auth, blocks[1][0], "ethan.bjornsen@gmail.com");
+      let { output, studentsRemaining, blocksRemaining } = pickBlocks(
+        emails,
+        blocks
+      );
+      const send = await logAndComfirm({
+        output,
+        studentsRemaining,
+        blocksRemaining
+      });
+      if (send) {
+        const responses = await inviteAll(output, auth);
+        const success = await appendFile(
+          responses,
+          "./apiResponses.json"
+        );
       }
     }
   );
@@ -142,8 +157,11 @@ function insertEvent(auth) {
     })
     .then(
       function(response) {
+        debugger;
         // Handle the results here (response.result has the parsed body).
+        debugger;
         console.log("Response", response);
+        debugger;
       },
       function(err) {
         console.error("Execute error", err);
