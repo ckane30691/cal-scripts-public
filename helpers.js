@@ -1,14 +1,10 @@
 const moment = require("moment");
 const { google } = require("googleapis");
 const readline = require("readline");
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 const fs = require("fs");
 const colors = require("colors");
 
-function getBlocks(inputEventArr) {
+function getBlocks(inputEventArr, extraWeekCount = 0) {
   const allPossible = [];
   let eventArr = JSON.parse(JSON.stringify(inputEventArr));
   eventArr = eventArr.filter(event => event.start.dateTime);
@@ -16,7 +12,12 @@ function getBlocks(inputEventArr) {
     .startOf("week")
     .add(1, "day")
     .add(9, "h");
-  for (let day = 0; day < 5; day++) {
+  for (let day = 0; day < 5 + (extraWeekCount * 6); day++) {
+    if(time.format("ddd") === "Sat") {
+      time.add(48, "h")
+      day--;
+      continue;
+    }
     allPossible.push([]);
     for (let halfHour = 0; halfHour < 6; halfHour++) {
       if (!eventArr.some(isOverlap.bind(null, time)))
@@ -117,6 +118,10 @@ Time blocks remaining: ${blocksRemaining}
 }
 
 function question(prompt) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
   return new Promise(resolve => {
     rl.question(prompt, input => {
       rl.close();
@@ -207,5 +212,6 @@ module.exports = {
   pickBlocks,
   inviteAll,
   appendFile,
+  question,
   sendInvite
 };

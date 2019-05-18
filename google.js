@@ -7,8 +7,8 @@ const {
   pickBlocks,
   logAndComfirm,
   inviteAll,
-  appendFile,
-  sendInvite
+  question,
+  appendFile
 } = require("./helpers");
 const emails = require("./emailsToInvite");
 
@@ -84,16 +84,24 @@ function getAccessToken(oAuth2Client, callback) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 async function listEvents(auth) {
+  const startingWeek =
+    parseInt(
+      await question(`Begin "X" weeks from last sunday...\n`)
+    );
+  const extraWeeks =
+    parseInt(
+      await question(`Spread meetings across "X" weeks...\n`)
+    ) - 1;
   const calendar = google.calendar({ version: "v3", auth });
   calendar.events.list(
     {
       calendarId: "primary",
       timeMin: moment()
-        .add(1, "week")
+        .add(startingWeek, "week")
         .startOf("week")
         .toDate(),
       timeMax: moment()
-        .add(1, "week")
+        .add(startingWeek + 1 + extraWeeks, "week")
         .endOf("week")
         .toDate(),
       maxResults: 1000,
@@ -103,23 +111,19 @@ async function listEvents(auth) {
     async (err, res) => {
       if (err) return console.log("The API returned an error: " + err);
       const events = res.data.items;
-      const blocks = getBlocks(events);
-      // const response = await sendInvite(auth, blocks[1][0], "ethan.bjornsen@gmail.com");
+      const blocks = getBlocks(events, extraWeeks);
       let { output, studentsRemaining, blocksRemaining } = pickBlocks(
         emails,
         blocks
       );
-      const send = await logAndComfirm({
+      const shouldSend = await logAndComfirm({
         output,
         studentsRemaining,
         blocksRemaining
       });
-      if (send) {
+      if (shouldSend) {
         const responses = await inviteAll(output, auth);
-        const success = await appendFile(
-          responses,
-          "./apiResponses.json"
-        );
+        const success = await appendFile(responses, "./apiResponses.json");
       }
     }
   );
