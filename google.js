@@ -13,18 +13,25 @@ const {
 const emails = require("./emailsToInvite");
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ["https://www.googleapis.com/auth/calendar"];
+const SCOPES = [
+  "https://www.googleapis.com/auth/calendar",
+  "https://www.googleapis.com/auth/spreadsheets"
+];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = "token.json";
 
-// Load client secrets from a local file.
-fs.readFile("credentials.json", (err, content) => {
-  if (err) return console.log("Error loading client secret file:", err);
-  // Authorize a client with credentials, then call the Google Calendar API.
-  authorize(JSON.parse(content), listEvents);
-});
+function runWithAuth(fn) {
+  return new Promise((resolve, reject) => {
+    // Load client secrets from a local file.
+    fs.readFile("credentials.json", (err, content) => {
+      if (err) return console.log("Error loading client secret file:", err);
+      // Authorize a client with credentials, then call the Google Calendar API.
+      authorize(JSON.parse(content), fn.bind(null, resolve));
+    });
+  });
+}
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -42,7 +49,7 @@ function authorize(credentials, callback) {
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, (err, token) => {
-    if (err) return getAccessToken(oAuth2Client, callback);
+    if (err) return getAccessToken(oAuth2Client);
     oAuth2Client.setCredentials(JSON.parse(token));
     callback(oAuth2Client);
   });
@@ -54,7 +61,7 @@ function authorize(credentials, callback) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-function getAccessToken(oAuth2Client, callback) {
+function getAccessToken(oAuth2Client) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES
@@ -73,8 +80,8 @@ function getAccessToken(oAuth2Client, callback) {
       fs.writeFile(TOKEN_PATH, JSON.stringify(token), err => {
         if (err) return console.error(err);
         console.log("Token stored to", TOKEN_PATH);
+        console.log("Please run the script again");
       });
-      callback(oAuth2Client);
     });
   });
 }
@@ -83,15 +90,13 @@ function getAccessToken(oAuth2Client, callback) {
  * Lists the next 10 events on the user's primary calendar.
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
-async function listEvents(auth) {
-  const startingWeek =
-    parseInt(
-      await question(`Begin "X" weeks from last sunday...\n`)
-    );
-  const extraWeeks =
-    parseInt(
-      await question(`Spread meetings across "X" weeks...\n`)
-    ) - 1;
+async function getSchedule(resolver, auth) {
+  const startingWeek = parseInt(
+    await question(`Begin "X" weeks from last sunday...\n`)
+  );
+  const duration = parseInt(
+    await question(`Spread meetings across "X" weeks...\n`)
+  );
   const calendar = google.calendar({ version: "v3", auth });
   calendar.events.list(
     {
@@ -101,32 +106,45 @@ async function listEvents(auth) {
         .startOf("week")
         .toDate(),
       timeMax: moment()
-        .add(startingWeek + 1 + extraWeeks, "week")
+        .add(startingWeek + duration, "week")
         .endOf("week")
         .toDate(),
       maxResults: 1000,
       singleEvents: true,
       orderBy: "startTime"
     },
-    async (err, res) => {
-      if (err) return console.log("The API returned an error: " + err);
+    (err, res) => {
+      if (err) return err;
       const events = res.data.items;
-      const blocks = getBlocks(events, extraWeeks);
-      let { output, studentsRemaining, blocksRemaining } = pickBlocks(
-        emails,
-        blocks
-      );
-      const shouldSend = await logAndComfirm({
-        output,
-        studentsRemaining,
-        blocksRemaining
+      resolver({
+        events,
+        startingWeek: moment()
+          .add(startingWeek, "week")
+          .startOf("week")
+          .toDate(),
+        duration
       });
-      if (shouldSend) {
-        const responses = await inviteAll(output, auth);
-        const success = await appendFile(responses, "./apiResponses.json");
-      }
     }
   );
+}
+
+async function confirmAndSend(events, weeksToSchedule) {
+  const blocks = getBlocks(events, weeksToSchedule);
+  let { output, studentsRemaining, blocksRemaining } = pickBlocks(
+    emails,
+    blocks
+  );
+  const shouldSend = await logAndComfirm({
+    output,
+    studentsRemaining,
+    blocksRemaining
+  });
+  if (shouldSend) {
+    // const responses = await inviteAll(output, auth);
+    // const success = await appendFile(responses, "./apiResponses.json");
+    return true;
+  }
+  return false;
 }
 
 function insertEvent(auth) {
@@ -172,3 +190,9 @@ function insertEvent(auth) {
       }
     );
 }
+
+module.exports = {
+  confirmAndSend,
+  runWithAuth,
+  getSchedule
+};

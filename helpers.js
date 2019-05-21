@@ -4,7 +4,8 @@ const readline = require("readline");
 const fs = require("fs");
 const colors = require("colors");
 
-function getBlocks(inputEventArr, extraWeekCount = 0) {
+function getBlocks(inputEventArr, weekCount = 1) {
+  let extraWeekCount = weekCount - 1;
   const allPossible = [];
   let eventArr = JSON.parse(JSON.stringify(inputEventArr));
   eventArr = eventArr.filter(event => event.start.dateTime);
@@ -12,9 +13,9 @@ function getBlocks(inputEventArr, extraWeekCount = 0) {
     .startOf("week")
     .add(1, "day")
     .add(9, "h");
-  for (let day = 0; day < 5 + (extraWeekCount * 6); day++) {
-    if(time.format("ddd") === "Sat") {
-      time.add(48, "h")
+  for (let day = 0; day < 5 + extraWeekCount * 6; day++) {
+    if (time.format("ddd") === "Sat") {
+      time.add(48, "h");
       day--;
       continue;
     }
@@ -192,7 +193,7 @@ function appendFile(data, filePath) {
         resolve(false);
         return;
       } else {
-        data = Object.assign(JSON.parse(readdata), data)
+        data = Object.assign(JSON.parse(readdata), data);
       }
       fs.writeFile(filePath, JSON.stringify(data, null, 2), err => {
         if (err) {
