@@ -122,13 +122,14 @@ async function getSchedule(resolver, auth) {
           .add(startingWeek, "week")
           .startOf("week")
           .toDate(),
-        duration
+        duration,
+        auth
       });
     }
   );
 }
 
-async function confirmAndSend(events, weeksToSchedule) {
+async function confirmAndSend(events, weeksToSchedule, auth) {
   const blocks = getBlocks(events, weeksToSchedule);
   let { output, studentsRemaining, blocksRemaining } = pickBlocks(
     emails,
@@ -140,8 +141,9 @@ async function confirmAndSend(events, weeksToSchedule) {
     blocksRemaining
   });
   if (shouldSend) {
-    // const responses = await inviteAll(output, auth);
-    // const success = await appendFile(responses, "./apiResponses.json");
+    const responses = await inviteAll(output, auth);
+    console.log(responses);
+    const success = await appendFile(responses, "./apiResponses.json");
     return true;
   }
   return false;

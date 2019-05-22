@@ -5,6 +5,7 @@ const fs = require("fs");
 const colors = require("colors");
 
 function getBlocks(inputEventArr, weekCount = 1) {
+  // console.log(inputEventArr)
   let extraWeekCount = weekCount - 1;
   const allPossible = [];
   let eventArr = JSON.parse(JSON.stringify(inputEventArr));
@@ -12,7 +13,8 @@ function getBlocks(inputEventArr, weekCount = 1) {
   const time = moment(eventArr[0].start.dateTime)
     .startOf("week")
     .add(1, "day")
-    .add(9, "h");
+    // .add(9, "h");
+    .add(6, "h");
   for (let day = 0; day < 5 + extraWeekCount * 6; day++) {
     if (time.format("ddd") === "Sat") {
       time.add(48, "h");
@@ -33,6 +35,7 @@ function getBlocks(inputEventArr, weekCount = 1) {
     }
     time.add(15, "h");
   }
+  // console.log(allPossible);
   return allPossible;
 }
 
@@ -106,7 +109,7 @@ async function logAndComfirm({ output, studentsRemaining, blocksRemaining }) {
 Students remaining: ${studentsRemaining}
 Time blocks remaining: ${blocksRemaining}
 `);
-
+  console.log(output)
   const ans = (await question("look good?\n")).trim().toLowerCase();
   console.log(`\n`);
   if (ans === "y" || ans === "yes" || ans === "depends on culture and fit") {
