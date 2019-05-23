@@ -210,6 +210,13 @@ function appendFile(data, filePath) {
   });
 }
 
+function toA1(x) {
+  // works up to x = 26 * 26 - 1
+  const toChar = int => String.fromCharCode(int + 65);
+  if (x > 25) return toA1(Math.floor(x / 26) - 1) + toChar(x % 26);
+  return toChar(x % 25)
+}
+
 module.exports = {
   getBlocks,
   logAndComfirm,
