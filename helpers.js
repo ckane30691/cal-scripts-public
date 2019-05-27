@@ -171,7 +171,7 @@ function sendInvite(auth, startTime, email, name = null) {
     attendees: [{ email }]
   };
   if (name) {
-    event.summary = `${name} <> Ethan`;
+    event.summary = `${name} <> Cory`;
   }
 
   const calendar = google.calendar({ version: "v3", auth });
@@ -227,7 +227,7 @@ function appendFile(data, filePath) {
     });
   });
 }
-//            0         1         2       3                 4             5             6         7             8     
+//            0         1         2       3                 4             5             6         7             8
 // grid = [["SFDC ID", "Name", "Email", "Is Job Seeking", "Cohort Date", "Notes 3", "Notes 2", "Notes 1", "New Notes"]]
 // meeting = ["001f100001OZ1R9", "Ali Alkaheli", "alialkaheli1@gmail.com", "Test", "Thu May 23 2019 16:00:00 GMT-0700 (PDT) {}"]
 function updateStudentRow(grid, meeting) {

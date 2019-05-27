@@ -23,6 +23,7 @@ const SCOPES = [
 const TOKEN_PATH = "token.json";
 
 function runWithAuth(fn) {
+  debugger
   return new Promise((resolve, reject) => {
     // Load client secrets from a local file.
     fs.readFile("credentials.json", (err, content) => {

@@ -1,8 +1,7 @@
 const { google } = require("googleapis");
 const { runWithAuth } = require("./google");
-const spreadsheetId = "18JAZIlXHlFlvIQKdwLG1KAtPSJujRHm23oh1Noxz5Rc";
 
-function getSheet(range, resolve, auth) {
+function getSheet(range, spreadsheetId, resolve, auth) {
   const sheets = google.sheets({ version: "v4", auth });
   sheets.spreadsheets.values.get(
     {
@@ -16,7 +15,7 @@ function getSheet(range, resolve, auth) {
   );
 }
 
-const createSheet = async (resolve, auth) => {
+const createSheet = async (spreadsheetId, resolve, auth) => {
   const tabName = "Note Sheet";
   const rowCount = 60;
   const columnCount = 12;
@@ -52,7 +51,11 @@ const createSheet = async (resolve, auth) => {
 function getSpreadsheetData({ spreadsheetId }, resolve, auth) {
   const sheets = google.sheets({ version: "v4", auth });
   sheets.spreadsheets.getByDataFilter({ spreadsheetId }, (err, response) => {
-    resolve(response.data);
+    if (err) {
+      console.log(err.errors[0].message)
+    } else {
+      resolve(response.data);
+    }
   });
 }
 
@@ -95,7 +98,6 @@ const writeToSheet = async (
 
 module.exports = {
   checkIfTabExists,
-  spreadsheetId,
   writeToSheet,
   getSheet,
   createSheet

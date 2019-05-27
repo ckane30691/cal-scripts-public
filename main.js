@@ -16,7 +16,7 @@ const {
   checkIfTabExists
 } = require("./googleSheets");
 
-const COACH_NAME = "Ethan Bjornsen";
+const COACH_NAME = "Cory Kane";
 
 const scheduleWeekPrompt = async () => {
   const { events, startingWeek, duration, auth } = await runWithAuth(
@@ -78,7 +78,7 @@ const inputNotesFromSheet = async () => {
   });
   if (!tabData.exists) {
     console.log("Creating tab...".c_b);
-    const { tabName, rowCount, columnCount } = await runWithAuth(createSheet);
+    const { tabName, rowCount, columnCount } = await runWithAuth(createSheet.bind(null, fileData.spreadsheetId));
     await appendFile(
       {
         tabName,
@@ -115,7 +115,7 @@ const inputNotesFromSheet = async () => {
 
   console.log("Fetching tab data...".c_b);
   const range = `${tabName}!A1:${toA1(columnCount - 1)}${rowCount}`;
-  const sheetData = await runWithAuth(getSheet.bind(null, range));
+  const sheetData = await runWithAuth(getSheet.bind(null, range, fileData.spreadsheetId));
 
   const newNotes = cp(sheetData)
     .values.slice(1)
