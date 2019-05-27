@@ -1,32 +1,35 @@
 const jsforce = require("jsforce");
 const { email, password, demoAccountID } = require("./password");
+const {} = require("./googleSheets");
 const conn = new jsforce.Connection({
   // you can change loginUrl to connect to sandbox or prerelease env.
   // loginUrl : 'https://test.salesforce.com'
 });
+const { buildGrid } = require("./meetingNotes");
 const moment = require("moment");
 const COACH_IDX_REPORT = 2;
 const STUDENT_NAME_IDX_REPORT = 1;
-const DATE_OF_MEETING_IDX = 4;
+const DATE_OF_MEETING_IDX = 8;
 
-createMeeting = async () => {
+const createMeeting = async ({notes, coach, sfdcId, dateTime, studentName}) => {
   const userInfo = await conn.login(email, password);
-  console.log(conn.accessToken);
-  console.log(conn.instanceUrl);
+  // console.log(conn.accessToken);
+  // console.log(conn.instanceUrl);
   // logged in user property
-  console.log("User ID: " + userInfo.id);
-  console.log("Org ID: " + userInfo.organizationId);
+  // console.log("User ID: " + userInfo.id);
+  // console.log("Org ID: " + userInfo.organizationId);
   try {
     response = await conn.sobject("Meeting__c").create({
-      Account__c: demoAccountID,
-      Staff_Name__c: "Ethan Bjornsen",
-      Date_Time_of_Meeting__c: Date.now(),
-      Notes__c: "This will work :)",
+      Account__c: sfdcId,
+      Staff_Name__c: coach,
+      Date_Time_of_Meeting__c: dateTime,
+      Notes__c: notes,
       Meeting_Type__c: "General Check-In"
     });
-    debugger;
+    return true;
   } catch (error) {
-    debugger;
+    console.log(`error entering ${studentName} notes`);
+    return false;
   }
 };
 
@@ -61,7 +64,7 @@ function filterMeetingsByCoach({ coachName, rows }) {
     .map(row => [...row]);
 }
 
-function groupByStudent(acc, row) {
+function reduceByStudent(acc, row) {
   if (!acc[row[STUDENT_NAME_IDX_REPORT]]) {
     acc[row[STUDENT_NAME_IDX_REPORT]] = [];
   }
@@ -69,27 +72,27 @@ function groupByStudent(acc, row) {
   return acc;
 }
 
-const fetchData = (async () => {
+const fetchMeetingsByCoach = async coachName => {
   const result = await get2dArrFromReportId("00O3a000004nhh6EAA");
   const myMeetings = filterMeetingsByCoach({
-    coachName: "Cory Kane",
+    coachName,
     rows: result.data
   });
-  const groupedByStudent = myMeetings.reduce(groupByStudent, {});
+  const groupedByStudent = myMeetings.reduce(reduceByStudent, {});
   Object.keys(groupedByStudent).map(name =>
-    groupedByStudent[name].sort(
-      (a, b) =>
-        moment(a[DATE_OF_MEETING_IDX]).format("YYYYMMDD") -
-        moment(b[DATE_OF_MEETING_IDX]).format("YYYYMMDD")
+    groupedByStudent[name].sort((a, b) =>
+      moment(a[DATE_OF_MEETING_IDX], "M/D/YYYY h:mm a").diff(
+        moment(b[DATE_OF_MEETING_IDX], "M/D/YYYY h:mm a"),
+        "hours"
+      )
     )
   );
-  debugger;
-  return groupByStudent;
-});
-
-
-(async () => {
-  const groupedByStudent = await fetchData();
-  
-})
+  return groupedByStudent;
+};
 // createMeeting() // this works
+
+module.exports = {
+  createMeeting,
+  get2dArrFromReportId,
+  fetchMeetingsByCoach
+};
