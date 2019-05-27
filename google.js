@@ -129,6 +129,39 @@ async function getSchedule(resolver, auth) {
   );
 }
 
+async function getSchedulePreset(startingWeek, duration, resolver, auth) {
+  const calendar = google.calendar({ version: "v3", auth });
+  calendar.events.list(
+    {
+      calendarId: "primary",
+      timeMin: moment()
+        .add(startingWeek, "week")
+        .startOf("week")
+        .toDate(),
+      timeMax: moment()
+        .add(startingWeek + duration, "week")
+        .endOf("week")
+        .toDate(),
+      maxResults: 1000,
+      singleEvents: true,
+      orderBy: "startTime"
+    },
+    (err, res) => {
+      if (err) return err;
+      const events = res.data.items;
+      resolver({
+        events,
+        startingWeek: moment()
+          .add(startingWeek, "week")
+          .startOf("week")
+          .toDate(),
+        duration,
+        auth
+      });
+    }
+  );
+}
+
 async function confirmAndSend(events, weeksToSchedule, auth) {
   const blocks = getBlocks(events, weeksToSchedule);
   let { output, studentsRemaining, blocksRemaining } = pickBlocks(
@@ -181,11 +214,8 @@ function insertEvent(auth) {
     })
     .then(
       function(response) {
-        debugger;
         // Handle the results here (response.result has the parsed body).
-        debugger;
         console.log("Response", response);
-        debugger;
       },
       function(err) {
         console.error("Execute error", err);
@@ -196,5 +226,6 @@ function insertEvent(auth) {
 module.exports = {
   confirmAndSend,
   runWithAuth,
+  getSchedulePreset,
   getSchedule
 };

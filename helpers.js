@@ -13,8 +13,8 @@ function getBlocks(inputEventArr, weekCount = 1) {
   const time = moment(eventArr[0].start.dateTime)
     .startOf("week")
     .add(1, "day")
-    // .add(9, "h");
-    .add(6, "h");
+    .add(9, "h");
+  // .add(6, "h");
   for (let day = 0; day < 5 + extraWeekCount * 6; day++) {
     if (time.format("ddd") === "Sat") {
       time.add(48, "h");
@@ -109,7 +109,6 @@ async function logAndComfirm({ output, studentsRemaining, blocksRemaining }) {
 Students remaining: ${studentsRemaining}
 Time blocks remaining: ${blocksRemaining}
 `);
-  console.log(output)
   const ans = (await question("look good?\n")).trim().toLowerCase();
   console.log(`\n`);
   if (ans === "y" || ans === "yes" || ans === "depends on culture and fit") {
@@ -145,7 +144,8 @@ function inviteAll(meetings, auth) {
 colors.setTheme({
   c_r: "red",
   c_b: "blue",
-  c_y: "yellow"
+  c_y: "yellow",
+  c_g: "green"
 });
 
 function logEvent(event) {
@@ -186,6 +186,24 @@ function sendInvite(auth, startTime, email, name = null) {
     });
 }
 
+function readFile(filePath) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filePath, (err, readdata) => {
+      if (err && err.code === "ENOENT") {
+        console.log(`File "${filePath}" not found...\n\n`.c_b);
+        resolve(false);
+      } else if (err) {
+        console.log("failed to readFile".c_r);
+        resolve(false);
+        return;
+      } else {
+        const data = JSON.parse(readdata);
+        resolve(data);
+      }
+    });
+  });
+}
+
 function appendFile(data, filePath) {
   return new Promise(resolve => {
     fs.readFile(filePath, (err, readdata) => {
@@ -209,8 +227,32 @@ function appendFile(data, filePath) {
     });
   });
 }
+//            0         1         2       3                 4             5             6         7             8     
+// grid = [["SFDC ID", "Name", "Email", "Is Job Seeking", "Cohort Date", "Notes 3", "Notes 2", "Notes 1", "New Notes"]]
+// meeting = ["001f100001OZ1R9", "Ali Alkaheli", "alialkaheli1@gmail.com", "Test", "Thu May 23 2019 16:00:00 GMT-0700 (PDT) {}"]
+function updateStudentRow(grid, meeting) {
+  const row = grid.find(fRow => {
+    return fRow[0] === meeting[0]
+  });
+  row[5] = row[6];
+  row[6] = row[7];
+  row[7] = `${moment(meeting[4]).format("ddd MMM Do")}: ${
+    meeting[3]
+  }`
+  row[8] = ""
+}
+
+function toA1(x) {
+  // works up to x = 26 * 26 - 1
+  const toChar = int => String.fromCharCode(int + 65);
+  if (x > 25) return toA1(Math.floor(x / 26) - 1) + toChar(x % 26);
+  return toChar(x % 25);
+}
 
 module.exports = {
+  updateStudentRow,
+  readFile,
+  toA1,
   getBlocks,
   logAndComfirm,
   pickBlocks,
