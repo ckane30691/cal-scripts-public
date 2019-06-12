@@ -224,20 +224,21 @@ const reportToSheet = async ({
 //   })
 //   .catch(err => console.log(err));
 // };
-
-const getNotesWithPuppeteer = async () => {
-  // let email;
-  // let password;
+var email = require('./intDB_password.js').email;
+var password = require('./intDB_password.js').password;
+const getNotesWithPuppeteer = async (email, password) => {
   const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
   await page.goto('https://www.interview-db.com/staff');
   await page.waitFor('#advocate_email')
   await page.waitFor('#advocate_password')
-  await page.$eval('#advocate_email', el => {
-    // debugger
-    el.value = ''
-  });
-  await page.$eval('#advocate_password', el => el.value = '');
+  // const emailAuth = (el) => {
+  //   el.value = email;
+  // }
+  const emailInput = await page.$eval('#advocate_email', (el) => el.value = '');
+  // await emailInput.value = email;
+  const passwordInput = await page.$eval('#advocate_password', (el) => el.value = '!');
+  // await passwordInput.value = password;
   await page.click('input[type="submit"]');
   await page.waitForNavigation();
   await page.waitFor('.sc-bXGyLb');
@@ -250,11 +251,19 @@ const getNotesWithPuppeteer = async () => {
     await page.click(`.sc-lkqHmb div:nth-child(${idx})`, idx++);
   }
   await page.click('input[type="number"]')
-  await page.$eval('input[type="number"]', el => el.value = '500');
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('Backspace')
+  await page.type('input[type="number"]', '500', { delay: 100 });
+  await page.waitFor(2000);
+  await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: './bin' });
+  await page.click('[download="generatedBy_react-csv.csv"]');
+  await page.waitFor(2000);
+  await browser.close();
+  return require('./bin/generatedBy_react-csv.csv')
 }
 // importIntDBNotes();
 // scheduleWeekPrompt();
-getNotesWithPuppeteer();
+getNotesWithPuppeteer(email, password).then((csv) => console.log(csv));
 // hitSheets();
 // makeSheet();
 // writeData();
