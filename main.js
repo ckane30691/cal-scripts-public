@@ -1,5 +1,6 @@
 const { toA1, readFile, appendFile } = require("./helpers");
 const moment = require("moment");
+const axios = require('axios');
 const { updateStudentRow } = require("./helpers");
 const {
   getSchedule,
@@ -15,6 +16,7 @@ const {
   writeToSheet,
   checkIfTabExists
 } = require("./googleSheets");
+const puppeteer = require('puppeteer');
 
 const COACH_NAME = "Cory Kane";
 
@@ -119,7 +121,7 @@ const inputNotesFromSheet = async () => {
 
   const newNotes = cp(sheetData)
     .values.slice(1)
-    .filter(row => row[sheetData.values[0].length - 1] !== undefined);
+    .filter(row => row[8]);
   newNotes.forEach(
     row => row.splice(3, 5) // keep "SFDC ID","Name","Email","New Notes"
   );
@@ -129,14 +131,16 @@ const inputNotesFromSheet = async () => {
         event.attendees && event.attendees.find(obj => obj.email === row[2])
     );
     if (!mostRecentMeeting) {
-      row.push(
+      row.splice(
+        4,
+        0,
         moment()
           .startOf("day")
           .add(9, "h")
           .toDate()
       );
     } else {
-      row.push(moment(mostRecentMeeting.start.dateTime).toDate());
+      row.splice(4, 0, moment(mostRecentMeeting.start.dateTime).toDate());
     }
     // TODO: Bug here?
   });
@@ -199,7 +203,58 @@ const reportToSheet = async ({
   return result;
 };
 
+// const importIntDBNotes = () => {
+//   axios.get('https://data.heroku.com/dataclips/lbedkofqdtsqxegqmyegebrvrivp.json?access-token=41342023-ecc2-4879-8096-0d92540d89ab')
+//   .then(res => {
+//     let studentArr = res.data.values;
+//     for (let i = 0; i < studentArr.length; i++) {
+//       let currStudent = studentArr[i];
+//       let studentObj = {};
+//       studentObj.coach = currStudent[0];
+//       studentObj.id = currStudent[1];
+//       studentObj.fname = currStudent[2];
+//       studentObj.lname = currStudent[3];
+//       studentObj.tuition = currStudent[4];
+//       studentObj.email = currStudent[5];
+//       studentObj.uuid = currStudent[6];
+//       studentObj.project = currStudent[7];
+//       studentObj.percentCompleted = currStudent[8];
+//       console.log(studentObj);
+//     }
+//   })
+//   .catch(err => console.log(err));
+// };
+
+const getNotesWithPuppeteer = async () => {
+  // let email;
+  // let password;
+  const browser = await puppeteer.launch({headless: false});
+  const page = await browser.newPage();
+  await page.goto('https://www.interview-db.com/staff');
+  await page.waitFor('#advocate_email')
+  await page.waitFor('#advocate_password')
+  await page.$eval('#advocate_email', el => {
+    // debugger
+    el.value = ''
+  });
+  await page.$eval('#advocate_password', el => el.value = '');
+  await page.click('input[type="submit"]');
+  await page.waitForNavigation();
+  await page.waitFor('.sc-bXGyLb');
+  await page.waitFor(2000);
+  await page.click('.sc-bXGyLb');
+  await page.waitFor('.sc-lkqHmb');
+  await page.waitFor(1000);
+  let idx = 7;
+  while (idx < 13) {
+    await page.click(`.sc-lkqHmb div:nth-child(${idx})`, idx++);
+  }
+  await page.click('input[type="number"]')
+  await page.$eval('input[type="number"]', el => el.value = '500');
+}
+// importIntDBNotes();
 // scheduleWeekPrompt();
+getNotesWithPuppeteer();
 // hitSheets();
 // makeSheet();
 // writeData();
@@ -208,7 +263,7 @@ const reportToSheet = async ({
 //   tabName: "Note Sheet",
 //   updateRowsCount: 60
 // });
-inputNotesFromSheet();
+// inputNotesFromSheet();
 // (async () => {
 //   const result = await checkIfTabExists({
 //     spreadsheetId: "18JAZIlXHlFlvIQKdwLG1KAtPSJujRHm23oh1Noxz5Rc",

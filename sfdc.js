@@ -13,6 +13,7 @@ const DATE_OF_MEETING_IDX = 8;
 
 const createMeeting = async ({notes, coach, sfdcId, dateTime, studentName}) => {
   const userInfo = await conn.login(email, password);
+  debugger
   // console.log(conn.accessToken);
   // console.log(conn.instanceUrl);
   // logged in user property

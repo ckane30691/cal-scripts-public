@@ -85,6 +85,7 @@ function pickBlocks(emails, allPossible) {
     }
   });
   blockCount = allPossible.reduce((acc, day) => acc + day.length, 0);
+  debugger
   return {
     output: result,
     studentsRemaining: emails.length,
@@ -93,6 +94,7 @@ function pickBlocks(emails, allPossible) {
 }
 
 async function logAndComfirm({ output, studentsRemaining, blocksRemaining }) {
+  debugger
   console.log(`\n\n----------------------------`.c_b);
   logEvent(output[0]);
 
