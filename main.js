@@ -17,6 +17,8 @@ const {
   checkIfTabExists
 } = require("./googleSheets");
 const puppeteer = require('puppeteer');
+const csv = require('csv-parser');
+const fs = require('fs');
 
 const COACH_NAME = "Cory Kane";
 
@@ -37,9 +39,11 @@ const makeSheet = async () => {
 };
 
 const writeData = async ({ tabName, arr2d, spreadsheetId }) => {
-  const maxCol = toA1(arr2d[0].length);
+  debugger
+  const maxCol = toA1(getMaxCol(arr2d));
   const maxRow = arr2d.length;
   const a1Range = `${tabName}!A1:${maxCol}${maxRow}`;
+  debugger
   const result = await runWithAuth(
     writeToSheet.bind(null, {
       a1Range,
@@ -49,6 +53,14 @@ const writeData = async ({ tabName, arr2d, spreadsheetId }) => {
   );
   return result;
 };
+
+const getMaxCol = (arr) => {
+  let biggest = -1;
+  for (let i = 0; i < arr.length; i++) {
+    biggest = arr[i].length > biggest ? arr[i].length : biggest;
+  }
+  return biggest;
+}
 
 const inputNotesFromSheet = async () => {
   // let tabName = null;
@@ -187,7 +199,8 @@ const reportToSheet = async ({
   newNotes = [],
   tabName,
   spreadsheetId,
-  updateRowsCount
+  updateRowsCount,
+  fromIntDB
 }) => {
   const groupedByStudent = await fetchMeetingsByCoach(COACH_NAME);
   const grid = buildGrid(groupedByStudent);
@@ -197,8 +210,9 @@ const reportToSheet = async ({
     }
   }
   newNotes.forEach(meeting => {
-    updateStudentRow(grid, meeting);
+    updateStudentRow(grid, meeting, fromIntDB);
   });
+  debugger
   const result = await writeData({ tabName, arr2d: grid, spreadsheetId });
   return result;
 };
@@ -254,16 +268,126 @@ const getNotesWithPuppeteer = async (email, password) => {
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('Backspace')
   await page.type('input[type="number"]', '500', { delay: 100 });
-  await page.waitFor(2000);
+  await page.waitFor(4000);
   await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: './bin' });
+  await page.waitFor('[download="generatedBy_react-csv.csv"]');
   await page.click('[download="generatedBy_react-csv.csv"]');
-  await page.waitFor(2000);
+  await page.waitFor(3000);
   await browser.close();
-  return require('./bin/generatedBy_react-csv.csv')
+  let result = [];
+  fs.createReadStream('./bin/generatedBy_react-csv.csv')
+  .pipe(csv())
+  .on('data', (row) => {
+    result.push(row);
+  })
+  .on('end', () => {
+    console.log('CSV file successfully processed');
+  });
+  return result;
 }
+
+const writeIntDBNotesToSheet = async (csvArr) => {
+  const fileData = await readFile("./sheetsData.json");
+  if (!fileData || !fileData.spreadsheetId) {
+    await appendFile(
+      {
+        spreadsheetId: null
+      },
+      "./sheetsData.json"
+    );
+    console.log(`Please fill out data in "sheetsData.json"`.c_b);
+    console.log(
+      `spreadsheetId = `.c_g +
+        `https://docs.google.com/spreadsheets/d/`.c_r +
+        `1gTlwfp7rtI3i___this-part-of-url___LCaZI6pC604ubA`.c_g +
+        `/edit#gid=12345`.c_r
+    );
+    return false;
+  }
+  console.log(`Checking if tab exists...`.c_b);
+  const tabData = await checkIfTabExists({
+    spreadsheetId: fileData.spreadsheetId,
+    tabName: "Note Sheet"
+  });
+  if (!tabData.exists) {
+    console.log("Creating tab...".c_b);
+    const { tabName, rowCount, columnCount } = await runWithAuth(createSheet.bind(null, fileData.spreadsheetId));
+    await appendFile(
+      {
+        tabName,
+        rowCount,
+        columnCount
+      },
+      "./sheetsData.json"
+    );
+    await reportToSheet({ tabName, spreadsheetId: fileData.spreadsheetId });
+    console.log("Tab created".c_g);
+
+    return;
+  } else {
+    await appendFile(
+      {
+        tabName: tabData.title,
+        rowCount: tabData.gridProperties.rowCount,
+        columnCount: tabData.gridProperties.columnCount
+      },
+      "./sheetsData.json"
+    );
+  }
+  const { tabName, rowCount, columnCount, spreadsheetId } = await readFile(
+    "./sheetsData.json"
+  );
+
+  console.log("Fetching tab data...".c_b);
+  const range = `${tabName}!A1:${toA1(columnCount - 1)}${rowCount}`;
+  const sheetData = await runWithAuth(getSheet.bind(null, range, fileData.spreadsheetId));
+
+  const newNotes = csvArr
+    // console.log(csvArr)
+  await reportToSheet({
+    newNotes,
+    tabName,
+    spreadsheetId,
+    updateRowsCount: 17,
+    fromIntDB: true
+  });
+}
+    // const mostRecentMeeting = pastEvents.find(
+  //     event =>
+  //       event.attendees && event.attendees.find(obj => obj.email === row[2])
+  //   );
+  //   if (!mostRecentMeeting) {
+  //     row.splice(
+  //       4,
+  //       0,
+  //       moment()
+  //         .startOf("day")
+  //         .add(9, "h")
+  //         .toDate()
+  //     );
+  //   } else {
+  //     row.splice(4, 0, moment(mostRecentMeeting.start.dateTime).toDate());
+  //   }
+  //   // TODO: Bug here?
+  // });
+
+
 // importIntDBNotes();
 // scheduleWeekPrompt();
-getNotesWithPuppeteer(email, password).then((csv) => console.log(csv));
+(async () => {
+  // const csvArr = await getNotesWithPuppeteer(email, password)
+  let result = [];
+  fs.createReadStream('./bin/generatedBy_react-csv.csv')
+  .pipe(csv())
+  .on('data', (row) => {
+    result.push(row);
+  })
+  .on('end', () => {
+    console.log('CSV file successfully processed');
+  });
+  await writeIntDBNotesToSheet(result);
+})();
+
 // hitSheets();
 // makeSheet();
 // writeData();

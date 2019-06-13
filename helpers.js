@@ -232,16 +232,48 @@ function appendFile(data, filePath) {
 //            0         1         2       3                 4             5             6         7             8
 // grid = [["SFDC ID", "Name", "Email", "Is Job Seeking", "Cohort Date", "Notes 3", "Notes 2", "Notes 1", "New Notes"]]
 // meeting = ["001f100001OZ1R9", "Ali Alkaheli", "alialkaheli1@gmail.com", "Test", "Thu May 23 2019 16:00:00 GMT-0700 (PDT) {}"]
-function updateStudentRow(grid, meeting) {
-  const row = grid.find(fRow => {
-    return fRow[0] === meeting[0]
-  });
-  row[5] = row[6];
-  row[6] = row[7];
-  row[7] = `${moment(meeting[4]).format("ddd MMM Do")}: ${
-    meeting[3]
-  }`
-  row[8] = ""
+function updateStudentRow(grid, meeting, fromIntDB) {
+  // debugger
+  if (fromIntDB == undefined) {
+    const row = grid.find(fRow => {
+      return fRow[0] === meeting[0]
+    });
+    row[5] = row[6];
+    row[6] = row[7];
+    row[7] = `${moment(meeting[4]).format("ddd MMM Do")}: ${
+      meeting[3]
+    }`
+    row[8] = ""
+  } else {
+    let activityComingUp = calculateActivity(meeting);
+    // debugger
+    const row = grid.find(fRow => {
+      return fRow[2] === meeting.email
+    });
+    if (!row) return;
+    row[9] = activityComingUp;
+    row[10] = meeting.numApps;
+    row[11] = meeting.numNetworkingConnections;
+    row[12] = meeting.numPhoneScreens;
+    row[12] = meeting.numVideoScreens;
+    row[13] = meeting.numCodingChallenges;
+    row[14] = meeting.numOnsites;
+    row[15] = meeting.numStrikes;
+    row[16] = meeting.daysSearching;
+  }
+}
+
+const calculateActivity = ({
+    numCodingChallenges,
+    numOnsites,
+    numPhoneScreens,
+    numVideoScreens
+  }) => {
+  let total = Number(numCodingChallenges)
+  + Number(numOnsites)
+  + Number(numVideoScreens)
+  + Number(numPhoneScreens);
+  return total > 0;
 }
 
 function toA1(x) {
