@@ -203,7 +203,7 @@ const reportToSheet = async ({
   fromIntDB
 }) => {
   const groupedByStudent = await fetchMeetingsByCoach(COACH_NAME);
-  const grid = buildGrid(groupedByStudent);
+  const grid = buildGrid(groupedByStudent, fromIntDB);
   if (updateRowsCount) {
     for (let i = grid.length; i < updateRowsCount; i++) {
       grid.push(Array(grid[0].length).fill(""));
@@ -249,9 +249,18 @@ const getNotesWithPuppeteer = async (email, password) => {
   // const emailAuth = (el) => {
   //   el.value = email;
   // }
-  const emailInput = await page.$eval('#advocate_email', (el) => el.value = '');
+  await page.evaluate((email, password) => {
+    console.log(email, password)
+    window.password = password;
+    window.email = email;
+  }, email, password)
+  await page.$eval('#advocate_email', (el) => el.value = window.email);
+  await page.$eval('#advocate_password', (el) => el.value = window.password);
+  await page.evaluate(() => {
+    window.password = null;
+    window.email = null;
+  });
   // await emailInput.value = email;
-  const passwordInput = await page.$eval('#advocate_password', (el) => el.value = '!');
   // await passwordInput.value = password;
   await page.click('input[type="submit"]');
   await page.waitForNavigation();
@@ -267,7 +276,7 @@ const getNotesWithPuppeteer = async (email, password) => {
   await page.click('input[type="number"]')
   await page.keyboard.press('ArrowRight')
   await page.keyboard.press('Backspace')
-  await page.type('input[type="number"]', '500', { delay: 100 });
+  await page.type('input[type="number"]', '14', { delay: 100 });
   await page.waitFor(4000);
   await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: './bin' });
   await page.waitFor('[download="generatedBy_react-csv.csv"]');
@@ -344,6 +353,7 @@ const writeIntDBNotesToSheet = async (csvArr) => {
 
   const newNotes = csvArr
     // console.log(csvArr)
+  console.log("\nUpdating sheet...".c_b);
   await reportToSheet({
     newNotes,
     tabName,
@@ -351,6 +361,7 @@ const writeIntDBNotesToSheet = async (csvArr) => {
     updateRowsCount: 17,
     fromIntDB: true
   });
+  console.log("\nSheet Updated".c_b);
 }
     // const mostRecentMeeting = pastEvents.find(
   //     event =>
@@ -375,17 +386,17 @@ const writeIntDBNotesToSheet = async (csvArr) => {
 // importIntDBNotes();
 // scheduleWeekPrompt();
 (async () => {
-  // const csvArr = await getNotesWithPuppeteer(email, password)
-  let result = [];
-  fs.createReadStream('./bin/generatedBy_react-csv.csv')
-  .pipe(csv())
-  .on('data', (row) => {
-    result.push(row);
-  })
-  .on('end', () => {
-    console.log('CSV file successfully processed');
-  });
-  await writeIntDBNotesToSheet(result);
+  const csvArr = await getNotesWithPuppeteer(email, password)
+  // let result = [];
+  // fs.createReadStream('./bin/generatedBy_react-csv.csv')
+  // .pipe(csv())
+  // .on('data', (row) => {
+  //   result.push(row);
+  // })
+  // .on('end', () => {
+  //   console.log('CSV file successfully processed');
+  // });
+  await writeIntDBNotesToSheet(csvArr);
 })();
 
 // hitSheets();

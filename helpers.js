@@ -235,6 +235,7 @@ function appendFile(data, filePath) {
 function updateStudentRow(grid, meeting, fromIntDB) {
   // debugger
   if (fromIntDB == undefined) {
+    // throw 'fromIntDB is not defined';
     const row = grid.find(fRow => {
       return fRow[0] === meeting[0]
     });
@@ -251,15 +252,17 @@ function updateStudentRow(grid, meeting, fromIntDB) {
       return fRow[2] === meeting.email
     });
     if (!row) return;
+    row[8] = row[8];
     row[9] = activityComingUp;
     row[10] = meeting.numApps;
     row[11] = meeting.numNetworkingConnections;
     row[12] = meeting.numPhoneScreens;
-    row[12] = meeting.numVideoScreens;
-    row[13] = meeting.numCodingChallenges;
-    row[14] = meeting.numOnsites;
-    row[15] = meeting.numStrikes;
-    row[16] = meeting.daysSearching;
+    row[13] = meeting.numVideoScreens;
+    row[14] = meeting.numCodingChallenges;
+    row[15] = meeting.numOnsites;
+    row[16] = meeting.numStrikes;
+    row[17] = meeting.daysSearching;
+    debugger
   }
 }
 

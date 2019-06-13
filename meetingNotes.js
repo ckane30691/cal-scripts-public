@@ -27,7 +27,7 @@ const moment = require("moment");
  * }
  */
 
-function buildGrid(groupedByStudent) {
+function buildGrid(groupedByStudent, fromIntDB) {
   const headers = [
     [
       "SFDC ID",
@@ -51,18 +51,20 @@ function buildGrid(groupedByStudent) {
     // row.push("notes"); // 3rd most recent meeting
     // row.push("notes"); // 2nd most recent meeting
     // row.push("notes"); // most recent meeting
-    const notes = ["", ""]
+    if (fromIntDB == undefined) {
+      const notes = ["", ""]
       .concat(
         meetingArray.map(
           meeting =>
-            `${moment(new Date(meeting[8])).format("ddd MMM Do")}: ${
-              meeting[5]
-            }`
+          `${moment(new Date(meeting[8])).format("ddd MMM Do")}: ${
+            meeting[5]
+          }`
         )
       )
       .slice(-3);
-    row = row.concat(notes);
-    row.push("");
+      row = row.concat(notes);
+      row.push("");
+    }
     return row;
   });
   output.sort((a, b) =>
