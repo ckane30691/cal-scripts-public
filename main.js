@@ -59,6 +59,7 @@ const getMaxCol = (arr) => {
   for (let i = 0; i < arr.length; i++) {
     biggest = arr[i].length > biggest ? arr[i].length : biggest;
   }
+  debugger
   return biggest;
 }
 
@@ -202,6 +203,7 @@ const reportToSheet = async ({
   updateRowsCount,
   fromIntDB
 }) => {
+  debugger
   const groupedByStudent = await fetchMeetingsByCoach(COACH_NAME);
   const grid = buildGrid(groupedByStudent, fromIntDB);
   if (updateRowsCount) {
@@ -217,46 +219,44 @@ const reportToSheet = async ({
   return result;
 };
 
-const importIntDBNotes = () => {
-  axios.get('https://data.heroku.com/dataclips/lbedkofqdtsqxegqmyegebrvrivp.json?access-token=41342023-ecc2-4879-8096-0d92540d89ab')
-  .then(res => {
-    let studentArr = res.data.values;
-    let allData = [];
-    for (let i = 0; i < studentArr.length; i++) {
-      let currStudent = studentArr[i];
-      let studentObj = {};
-      studentObj.coach = currStudent[0];
-      studentObj.id = currStudent[1];
-      studentObj.fname = currStudent[2];
-      studentObj.lname = currStudent[3];
-      studentObj.tuition = currStudent[4];
-      studentObj.email = currStudent[5];
-      studentObj.uuid = currStudent[6];
-      let key = currStudent[7].toLowerCase().split(' ').join('_')
-      studentObj[key + '_percent_completed'] = currStudent[8];
-      allData.push(studentObj)
-    }
-    let seen = {};
-    let final = [];
-    for (let i = 0; i < allData.length; i++) {
-      if (seen[allData[i].id]) continue;
-      let updatedStudent = {};
-      for (let j = 1; j< allData.length; j++ ) {
-        if (allData[i].id === allData[j].id) {
-          Object.assign(allData[i], allData[j]);
-        }
+const getProjectNotesFromIntDB = async () => {
+  let res = await axios.get('https://data.heroku.com/dataclips/lbedkofqdtsqxegqmyegebrvrivp.json?access-token=41342023-ecc2-4879-8096-0d92540d89ab')
+  let studentArr = res.data.values;
+  let allData = [];
+  for (let i = 0; i < studentArr.length; i++) {
+    let currStudent = studentArr[i];
+    let studentObj = {};
+    studentObj.coach = currStudent[0];
+    studentObj.id = currStudent[1];
+    studentObj.fname = currStudent[2];
+    studentObj.lname = currStudent[3];
+    studentObj.tuition = currStudent[4];
+    studentObj.email = currStudent[5];
+    studentObj.uuid = currStudent[6];
+    let key = currStudent[7].toLowerCase().split(' ').join('_')
+    studentObj[key + '_percent_completed'] = currStudent[8];
+    allData.push(studentObj)
+  }
+  let seen = {};
+  let final = [];
+  for (let i = 0; i < allData.length; i++) {
+    if (seen[allData[i].id]) continue;
+    let updatedStudent = {};
+    for (let j = 1; j< allData.length; j++ ) {
+      if (allData[i].id === allData[j].id) {
+        Object.assign(allData[i], allData[j]);
       }
-      seen[allData[i].id] = true;
-      final.push(allData[i]);
-      debugger
     }
-    return final
-  })
-  .catch(err => console.log(err));
+    seen[allData[i].id] = true;
+    final.push(allData[i]);
+    // debugger
+  }
+  return final
 };
 
 var email = require('./intDB_password.js').email;
 var password = require('./intDB_password.js').password;
+
 const getNotesWithPuppeteer = async (email, password) => {
   const browser = await puppeteer.launch({headless: false});
   const page = await browser.newPage();
@@ -382,11 +382,11 @@ const writeIntDBNotesToSheet = async (csvArr) => {
   const newNotes = csvArr
     // console.log(csvArr)
   console.log("\nUpdating sheet...".c_b);
+  debugger
   await reportToSheet({
     newNotes,
     tabName,
     spreadsheetId,
-    updateRowsCount: 17,
     fromIntDB: true
   });
   // write function to color cells here
@@ -394,12 +394,14 @@ const writeIntDBNotesToSheet = async (csvArr) => {
   console.log("\nSheet Updated".c_b);
 }
 
-importIntDBNotes();
+
 // writeIntDBNotesToSheet(data);
 
 // scheduleWeekPrompt();
-// (async () => {
-  // const csvArr = await getNotesWithPuppeteer(email, password)
+(async () => {
+  const projectNotes = await getProjectNotesFromIntDB();
+  await writeIntDBNotesToSheet(projectNotes);
+  const csvArr = await getNotesWithPuppeteer(email, password);
   // let result = [];
   // fs.createReadStream('./bin/generatedBy_react-csv.csv')
   // .pipe(csv())
@@ -409,8 +411,8 @@ importIntDBNotes();
   // .on('end', () => {
   //   console.log('CSV file successfully processed');
   // });
-  // await writeIntDBNotesToSheet(csvArr);
-// })();
+  await writeIntDBNotesToSheet(csvArr);
+})();
 
 // hitSheets();
 // makeSheet();

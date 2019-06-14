@@ -8,7 +8,6 @@ module.exports = [
   ["Victoria", "vjohkv@gmail.com"],
   ["Eva", "eva.li.pan@gmail.com"],
   ["William", "williamjohncaudy@gmail.com"],
-  ["Gabriel", "gflujan@gmail.com"],
   ["Ivan", "ivan.kwong710@gmail.com"],
   ["Ryan", "ryanfoong8983@gmail.com"],
   ["Sam", "sam.d.odonnell@gmail.com"],
@@ -19,7 +18,6 @@ module.exports = [
   ["Rome", "romebell5@gmail.com"],
   ["Michael", "michaelvaleriani@gmail.com"],
   ["Winston", "brianiswinston@yahoo.com"],
-  ["Rewel", "rgjr22@gmail.com"],
   ["Jason", "wongcjason@gmail.com"],
   ["Vanessa", "vanchen07@gmail.com"],
   ["Jaya", "jayal2905@gmail.com"],
@@ -27,5 +25,7 @@ module.exports = [
   ["Farah", "fyquader@gmail.com"],
   ["Melvin", "melvintmallari@gmail.com"],
   ["Niya", "niyatihd@gmail.com"],
-  ["Robin", "robintsunny@gmail.com"]
+  ["Robin", "robintsunny@gmail.com"],
+  ["Chris", "chris.yip87@gmail.com"]
+  ["Alec", "ning.shijie.develop@gmail.com"]
 ];
