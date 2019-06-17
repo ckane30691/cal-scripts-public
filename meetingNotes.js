@@ -38,7 +38,23 @@ function buildGrid(groupedByStudent, fromIntDB) {
       "Notes 3",
       "Notes 2",
       "Notes 1",
-      "New Notes"
+      "New Notes",
+      "Activity In Past 2 Weeks",
+      "Num Apps",
+      "Networking Connections",
+      "Phone Screens",
+      "Video Screens",
+      "Coding Challenges",
+      "Onsites",
+      "Strikes",
+      "Days Searching",
+      "Personal Site",
+      "FSP",
+      "Flex",
+      "JSP",
+      "Resume",
+      "Cover Letter",
+      "PAR"
     ]
   ];
   const output = Object.values(groupedByStudent).map(meetingArray => {
