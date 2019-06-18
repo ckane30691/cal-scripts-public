@@ -252,23 +252,22 @@ function updateStudentRow(grid, meeting, fromIntDB) {
       return fRow[2] === meeting.email
     });
     if (!row) return;
-    row[8] = row[8];
     row[9] = activityComingUp;
-    row[10] = meeting.numApps || row[10];
-    row[11] = meeting.numNetworkingConnections || row[11];
-    row[12] = meeting.numPhoneScreens || row[12];
-    row[13] = meeting.numVideoScreens || row[13];
-    row[14] = meeting.numCodingChallenges || row[14];
-    row[15] = meeting.numOnsites || row[15];
-    row[16] = meeting.numStrikes || row[16];
-    row[17] = meeting.daysSearching || row[17];
-    row[18] = meeting.personal_site_percent_completed || row[18];
-    row[19] = meeting.full_stack_project_percent_completed || row[19];
-    row[20] = meeting.flex_project_percent_completed || row[20];
-    row[21] = meeting.javascript_project_percent_completed || row[21];
-    row[22] = meeting.resume_percent_completed || row[22];
-    row[23] = meeting.cover_letter_percent_completed || row[23];
-    row[24] = meeting.behavioral_chart_percent_completed || row[24];
+    row[10] = meeting.numApps;
+    row[11] = meeting.numNetworkingConnections;
+    row[12] = meeting.numPhoneScreens;
+    row[13] = meeting.numVideoScreens;
+    row[14] = meeting.numCodingChallenges;
+    row[15] = meeting.numOnsites;
+    row[16] = meeting.numStrikes;
+    row[17] = meeting.daysSearching;
+    row[18] = meeting.personal_site_percent_completed;
+    row[19] = meeting.full_stack_project_percent_completed;
+    row[20] = meeting.flex_project_percent_completed;
+    row[21] = meeting.javascript_project_percent_completed;
+    row[22] = meeting.resume_percent_completed;
+    row[23] = meeting.cover_letter_percent_completed;
+    row[24] = meeting.behavioral_chart_percent_completed;
   }
 }
 

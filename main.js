@@ -38,7 +38,7 @@ const makeSheet = async () => {
   const result = await runWithAuth(createSheet);
 };
 
-const writeData = async ({ tabName, arr2d, spreadsheetId }) => {
+const writeData = async ({ tabName, arr2d, spreadsheetId, gid }) => {
   debugger
   const maxCol = toA1(getMaxCol(arr2d));
   const maxRow = arr2d.length;
@@ -48,7 +48,8 @@ const writeData = async ({ tabName, arr2d, spreadsheetId }) => {
     writeToSheet.bind(null, {
       a1Range,
       spreadsheetId,
-      arr2d
+      arr2d,
+      gid
     })
   );
   return result;
@@ -201,7 +202,8 @@ const reportToSheet = async ({
   tabName,
   spreadsheetId,
   updateRowsCount,
-  fromIntDB
+  fromIntDB,
+  gid
 }) => {
   debugger
   const groupedByStudent = await fetchMeetingsByCoach(COACH_NAME);
@@ -215,7 +217,7 @@ const reportToSheet = async ({
     updateStudentRow(grid, meeting, fromIntDB);
   });
   debugger
-  const result = await writeData({ tabName, arr2d: grid, spreadsheetId });
+  const result = await writeData({ tabName, arr2d: grid, spreadsheetId, gid });
   return result;
 };
 
@@ -370,7 +372,7 @@ const writeIntDBNotesToSheet = async (csvArr) => {
       "./sheetsData.json"
     );
   }
-  const { tabName, rowCount, columnCount, spreadsheetId } = await readFile(
+  const { tabName, rowCount, columnCount, spreadsheetId, gid } = await readFile(
     "./sheetsData.json"
   );
 
@@ -387,7 +389,8 @@ const writeIntDBNotesToSheet = async (csvArr) => {
     newNotes,
     tabName,
     spreadsheetId,
-    fromIntDB: true
+    fromIntDB: true,
+    gid
   });
   // write function to color cells here
 

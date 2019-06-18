@@ -72,19 +72,21 @@ async function checkIfTabExists({ spreadsheetId, tabName }) {
 }
 
 const writeToSheet = async (
-  { a1Range, spreadsheetId, arr2d },
+  { a1Range, spreadsheetId, arr2d, gid },
   resolve,
   auth
 ) => {
   const sheets = google.sheets({ version: "v4", auth });
-  const resource = { values: arr2d };
+  const resource = {
+    values: arr2d,
+   };
   const valueInputOption = "USER_ENTERED";
-  sheets.spreadsheets.values.update(
+  await sheets.spreadsheets.values.update(
     {
       spreadsheetId,
       range: a1Range,
       valueInputOption,
-      resource
+      resource,
     },
     (err, result) => {
       if (err) {
@@ -94,6 +96,253 @@ const writeToSheet = async (
       }
     }
   );
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    resource: {
+      "requests": [
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 9,
+                  "endColumnIndex": 10,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "TEXT_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "FALSE"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.2,
+                    "red": 0.8,
+                  }
+                }
+              }
+            },
+            "index": 0
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 9,
+                  "endColumnIndex": 10,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "TEXT_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "TRUE"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.8,
+                    "red": 0.2,
+                  }
+                }
+              }
+            },
+            "index": 1
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 10,
+                  "endColumnIndex": 11,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_GREATER_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "25"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.8,
+                    "red": 0.2,
+                  }
+                }
+              }
+            },
+            "index": 2
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 11,
+                  "endColumnIndex": 12,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_GREATER_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "15"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.8,
+                    "red": 0.2,
+                  }
+                }
+              }
+            },
+            "index": 3
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 12,
+                  "endColumnIndex": 16,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_GREATER_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "1"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.8,
+                    "red": 0.2,
+                  }
+                }
+              }
+            },
+            "index": 4
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 16,
+                  "endColumnIndex": 17,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_GREATER_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "7"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.2,
+                    "red": 0.8,
+                  }
+                }
+              }
+            },
+            "index": 5
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 18,
+                  "endColumnIndex": 25,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_GREATER_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "70"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.8,
+                    "red": 0.2,
+                  }
+                }
+              }
+            },
+            "index": 6
+          }
+        },
+        {
+          "addConditionalFormatRule": {
+            "rule": {
+              "ranges": [
+                {
+                  "sheetId": gid,
+                  "startColumnIndex": 18,
+                  "endColumnIndex": 25,
+                },
+              ],
+              "booleanRule": {
+                "condition": {
+                  "type": "NUMBER_LESS_THAN_EQ",
+                  "values": [
+                    {
+                      "userEnteredValue": "50"
+                    }
+                  ]
+                },
+                "format": {
+                  "backgroundColor": {
+                    "green": 0.2,
+                    "red": 0.8,
+                  }
+                }
+              }
+            },
+            "index": 7
+          }
+        },
+      ]
+    }
+}).catch(err => console.log(err))
 };
 
 module.exports = {
