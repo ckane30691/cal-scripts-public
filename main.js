@@ -1,12 +1,12 @@
 const { toA1, readFile, appendFile } = require("./helpers");
 const moment = require("moment");
-const axios = require('axios');
+const axios = require("axios");
 const { updateStudentRow } = require("./helpers");
 const {
   getSchedule,
   getSchedulePreset,
   confirmAndSend,
-  runWithAuth
+  runWithAuth,
 } = require("./google");
 const { fetchMeetingsByCoach, createMeeting } = require("./sfdc");
 const { buildGrid } = require("./meetingNotes");
@@ -14,11 +14,11 @@ const {
   getSheet,
   createSheet,
   writeToSheet,
-  checkIfTabExists
+  checkIfTabExists,
 } = require("./googleSheets");
-const puppeteer = require('puppeteer');
-const csv = require('csv-parser');
-const fs = require('fs');
+const puppeteer = require("puppeteer");
+const csv = require("csv-parser");
+const fs = require("fs");
 
 const COACH_NAME = "Cory Kane";
 
@@ -39,17 +39,17 @@ const makeSheet = async () => {
 };
 
 const writeData = async ({ tabName, arr2d, spreadsheetId, gid }) => {
-  debugger
+  debugger;
   const maxCol = toA1(getMaxCol(arr2d));
   const maxRow = arr2d.length;
   const a1Range = `${tabName}!A1:${maxCol}${maxRow}`;
-  debugger
+  debugger;
   const result = await runWithAuth(
     writeToSheet.bind(null, {
       a1Range,
       spreadsheetId,
       arr2d,
-      gid
+      gid,
     })
   );
   return result;
@@ -60,9 +60,9 @@ const getMaxCol = (arr) => {
   for (let i = 0; i < arr.length; i++) {
     biggest = arr[i].length > biggest ? arr[i].length : biggest;
   }
-  debugger
+  debugger;
   return biggest;
-}
+};
 
 const inputNotesFromSheet = async () => {
   // let tabName = null;
@@ -74,7 +74,7 @@ const inputNotesFromSheet = async () => {
   if (!fileData || !fileData.spreadsheetId) {
     await appendFile(
       {
-        spreadsheetId: null
+        spreadsheetId: null,
       },
       "./sheetsData.json"
     );
@@ -90,16 +90,18 @@ const inputNotesFromSheet = async () => {
   console.log(`Checking if tab exists...`.c_b);
   const tabData = await checkIfTabExists({
     spreadsheetId: fileData.spreadsheetId,
-    tabName: "Note Sheet"
+    tabName: "Note Sheet",
   });
   if (!tabData.exists) {
     console.log("Creating tab...".c_b);
-    const { tabName, rowCount, columnCount } = await runWithAuth(createSheet.bind(null, fileData.spreadsheetId));
+    const { tabName, rowCount, columnCount } = await runWithAuth(
+      createSheet.bind(null, fileData.spreadsheetId)
+    );
     await appendFile(
       {
         tabName,
         rowCount,
-        columnCount
+        columnCount,
       },
       "./sheetsData.json"
     );
@@ -112,7 +114,7 @@ const inputNotesFromSheet = async () => {
       {
         tabName: tabData.title,
         rowCount: tabData.gridProperties.rowCount,
-        columnCount: tabData.gridProperties.columnCount
+        columnCount: tabData.gridProperties.columnCount,
       },
       "./sheetsData.json"
     );
@@ -126,33 +128,28 @@ const inputNotesFromSheet = async () => {
     getSchedulePreset.bind(null, -2, 3)
   );
   const pastEvents = events
-    .filter(event => moment(event.start.dateTime).isBefore(moment()))
+    .filter((event) => moment(event.start.dateTime).isBefore(moment()))
     .reverse(); // .find(el => bool)
 
   console.log("Fetching tab data...".c_b);
   const range = `${tabName}!A1:${toA1(columnCount - 1)}${rowCount}`;
-  const sheetData = await runWithAuth(getSheet.bind(null, range, fileData.spreadsheetId));
+  const sheetData = await runWithAuth(
+    getSheet.bind(null, range, fileData.spreadsheetId)
+  );
 
   const newNotes = cp(sheetData)
     .values.slice(1)
-    .filter(row => row[8]);
+    .filter((row) => row[8]);
   newNotes.forEach(
-    row => row.splice(3, 5) // keep "SFDC ID","Name","Email","New Notes"
+    (row) => row.splice(3, 5) // keep "SFDC ID","Name","Email","New Notes"
   );
-  newNotes.forEach(row => {
+  newNotes.forEach((row) => {
     const mostRecentMeeting = pastEvents.find(
-      event =>
-        event.attendees && event.attendees.find(obj => obj.email === row[2])
+      (event) =>
+        event.attendees && event.attendees.find((obj) => obj.email === row[2])
     );
     if (!mostRecentMeeting) {
-      row.splice(
-        4,
-        0,
-        moment()
-          .startOf("day")
-          .add(9, "h")
-          .toDate()
-      );
+      row.splice(4, 0, moment().startOf("day").add(9, "h").toDate());
     } else {
       row.splice(4, 0, moment(mostRecentMeeting.start.dateTime).toDate());
     }
@@ -161,13 +158,13 @@ const inputNotesFromSheet = async () => {
   debugger;
   console.log("Writing meeting notes to SFDC...\n".c_b);
 
-  const promises = newNotes.map(noteData =>
+  const promises = newNotes.map((noteData) =>
     createMeeting({
       sfdcId: noteData[0],
       studentName: noteData[1],
       notes: noteData[3],
       dateTime: noteData[4],
-      coach: COACH_NAME
+      coach: COACH_NAME,
     })
   );
   const results = await Promise.all(promises);
@@ -188,7 +185,7 @@ const inputNotesFromSheet = async () => {
     newNotes,
     tabName,
     spreadsheetId,
-    updateRowsCount: rowCount
+    updateRowsCount: rowCount,
   });
   console.log("Finished".c_g);
 };
@@ -203,9 +200,9 @@ const reportToSheet = async ({
   spreadsheetId,
   updateRowsCount,
   fromIntDB,
-  gid
+  gid,
 }) => {
-  debugger
+  debugger;
   const groupedByStudent = await fetchMeetingsByCoach(COACH_NAME);
   const grid = buildGrid(groupedByStudent, fromIntDB);
   if (updateRowsCount) {
@@ -213,16 +210,46 @@ const reportToSheet = async ({
       grid.push(Array(grid[0].length).fill(""));
     }
   }
-  newNotes.forEach(meeting => {
+  newNotes.forEach((meeting) => {
     updateStudentRow(grid, meeting, fromIntDB);
   });
-  debugger
+  debugger;
   const result = await writeData({ tabName, arr2d: grid, spreadsheetId, gid });
   return result;
 };
 
+const loginToInterviewDB = async (email, password) => {
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+  await page.goto("https://www.interview-db.com/staff");
+
+  // break out into helper
+  await page.waitFor("#advocate_email");
+  await page.waitFor("#advocate_password");
+  await page.evaluate(
+    (email, password) => {
+      window.password = password;
+      window.email = email;
+    },
+    email,
+    password
+  );
+  await page.$eval("#advocate_email", (el) => (el.value = window.email));
+  await page.$eval("#advocate_password", (el) => (el.value = window.password));
+  await page.evaluate(() => {
+    window.password = null;
+    window.email = null;
+  });
+  await page.click('input[type="submit"]');
+
+  await page.waitForNavigation();
+  return page;
+};
+
 const getProjectNotesFromIntDB = async () => {
-  let res = await axios.get('https://data.heroku.com/dataclips/lbedkofqdtsqxegqmyegebrvrivp.json?access-token=41342023-ecc2-4879-8096-0d92540d89ab')
+  let res = await axios.get(
+    "https://data.heroku.com/dataclips/lbedkofqdtsqxegqmyegebrvrivp.json?access-token=41342023-ecc2-4879-8096-0d92540d89ab"
+  );
   let studentArr = res.data.values;
   let allData = [];
   for (let i = 0; i < studentArr.length; i++) {
@@ -235,16 +262,16 @@ const getProjectNotesFromIntDB = async () => {
     studentObj.tuition = currStudent[4];
     studentObj.email = currStudent[5];
     studentObj.uuid = currStudent[6];
-    let key = currStudent[7].toLowerCase().split(' ').join('_')
-    studentObj[key + '_percent_completed'] = currStudent[8];
-    allData.push(studentObj)
+    let key = currStudent[7].toLowerCase().split(" ").join("_");
+    studentObj[key + "_percent_completed"] = currStudent[8];
+    allData.push(studentObj);
   }
   let seen = {};
   let final = [];
   for (let i = 0; i < allData.length; i++) {
     if (seen[allData[i].id]) continue;
     let updatedStudent = {};
-    for (let j = 1; j< allData.length; j++ ) {
+    for (let j = 1; j < allData.length; j++) {
       if (allData[i].id === allData[j].id) {
         Object.assign(allData[i], allData[j]);
       }
@@ -253,83 +280,76 @@ const getProjectNotesFromIntDB = async () => {
     final.push(allData[i]);
     // debugger
   }
-  return final
+  return final;
 };
 
-var email = require('./intDB_password.js').email;
-var password = require('./intDB_password.js').password;
+var email = require("./intDB_password.js").email;
+var password = require("./intDB_password.js").password;
+
+const forgiveStrikesWithPuppeteer = async (
+  numStrikesToForgive,
+  email,
+  password
+) => {
+  let page = await loginToInterviewDB(email, password);
+  // await page.waitFor(".sc-iGPElx");
+  // await page.click(".sc-iGPElx");
+  // await page.type('.sc-iGPElx"]', "Per Cory", { delay: 10 });
+  // await page.click(".sc-dxgOiQ");
+  await page.click('input[type="text"]');
+  await page.type('input[type="number"]', "Rome", { delay: 10 });
+};
 
 const getNotesWithPuppeteer = async (email, password) => {
-  const browser = await puppeteer.launch({headless: false});
-  const page = await browser.newPage();
-  await page.goto('https://www.interview-db.com/staff');
-
+  let page = await loginToInterviewDB(email, password);
   // break out into helper
-  await page.waitFor('#advocate_email')
-  await page.waitFor('#advocate_password')
-  await page.evaluate((email, password) => {
-    window.password = password;
-    window.email = email;
-  }, email, password)
-  await page.$eval('#advocate_email', (el) => el.value = window.email);
-  await page.$eval('#advocate_password', (el) => el.value = window.password);
-  await page.evaluate(() => {
-    window.password = null;
-    window.email = null;
-  });
-  await page.click('input[type="submit"]');
-
-
-  await page.waitForNavigation();
-
-  // break out into helper
-  await page.waitFor('.sc-bXGyLb');
+  await page.waitFor(".sc-fOKMvo");
   await page.waitFor(2000);
-  await page.click('.sc-bXGyLb');
-  await page.waitFor('.sc-lkqHmb');
+  await page.click(".sc-fOKMvo");
+  await page.waitFor(".sc-dUjcNx");
   await page.waitFor(1000);
   let idx = 7;
   while (idx < 13) {
-    await page.click(`.sc-lkqHmb div:nth-child(${idx})`, idx++);
+    await page.click(`.sc-dUjcNx div:nth-child(${idx})`, idx++);
   }
 
   // break out into helper
-  await page.click('input[type="number"]')
-  await page.keyboard.press('ArrowRight')
-  await page.keyboard.press('Backspace')
-  await page.type('input[type="number"]', '14', { delay: 100 });
-
+  await page.click('input[type="number"]');
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("Backspace");
+  await page.type('input[type="number"]', "14", { delay: 100 });
 
   await page.waitFor(4000);
 
   // break out into helper
-  await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: './bin' });
+  await page._client.send("Page.setDownloadBehavior", {
+    behavior: "allow",
+    downloadPath: "./bin",
+  });
   await page.waitFor('[download="generatedBy_react-csv.csv"]');
   await page.click('[download="generatedBy_react-csv.csv"]');
   await page.waitFor(3000);
 
-
   await browser.close();
   let result = [];
-  fs.createReadStream('./bin/generatedBy_react-csv.csv')
-  .pipe(csv())
-  .on('data', (row) => {
-    result.push(row);
-  })
-  .on('end', () => {
-    console.log('CSV file successfully processed');
-  });
+  fs.createReadStream("./bin/generatedBy_react-csv.csv")
+    .pipe(csv())
+    .on("data", (row) => {
+      result.push(row);
+    })
+    .on("end", () => {
+      console.log("CSV file successfully processed");
+    });
   return result;
-}
+};
 
 const writeIntDBNotesToSheet = async (csvArr) => {
-
   // helper function
   const fileData = await readFile("./sheetsData.json");
   if (!fileData || !fileData.spreadsheetId) {
     await appendFile(
       {
-        spreadsheetId: null
+        spreadsheetId: null,
       },
       "./sheetsData.json"
     );
@@ -345,16 +365,18 @@ const writeIntDBNotesToSheet = async (csvArr) => {
   console.log(`Checking if tab exists...`.c_b);
   const tabData = await checkIfTabExists({
     spreadsheetId: fileData.spreadsheetId,
-    tabName: "Note Sheet"
+    tabName: "Note Sheet",
   });
   if (!tabData.exists) {
     console.log("Creating tab...".c_b);
-    const { tabName, rowCount, columnCount } = await runWithAuth(createSheet.bind(null, fileData.spreadsheetId));
+    const { tabName, rowCount, columnCount } = await runWithAuth(
+      createSheet.bind(null, fileData.spreadsheetId)
+    );
     await appendFile(
       {
         tabName,
         rowCount,
-        columnCount
+        columnCount,
       },
       "./sheetsData.json"
     );
@@ -367,7 +389,7 @@ const writeIntDBNotesToSheet = async (csvArr) => {
       {
         tabName: tabData.title,
         rowCount: tabData.gridProperties.rowCount,
-        columnCount: tabData.gridProperties.columnCount
+        columnCount: tabData.gridProperties.columnCount,
       },
       "./sheetsData.json"
     );
@@ -379,43 +401,44 @@ const writeIntDBNotesToSheet = async (csvArr) => {
   console.log("Fetching tab data...".c_b);
   // helper function
   const range = `${tabName}!A1:${toA1(columnCount - 1)}${rowCount}`;
-  const sheetData = await runWithAuth(getSheet.bind(null, range, fileData.spreadsheetId));
+  const sheetData = await runWithAuth(
+    getSheet.bind(null, range, fileData.spreadsheetId)
+  );
 
-  const newNotes = csvArr
-    // console.log(csvArr)
+  const newNotes = csvArr;
+  // console.log(csvArr)
   console.log("\nUpdating sheet...".c_b);
-  debugger
+  debugger;
   await reportToSheet({
     newNotes,
     tabName,
     spreadsheetId,
     fromIntDB: true,
-    gid
+    gid,
   });
   // write function to color cells here
 
   console.log("\nSheet Updated".c_b);
-}
-
+};
 
 // writeIntDBNotesToSheet(data);
-
-// scheduleWeekPrompt();
-(async () => {
-  const projectNotes = await getProjectNotesFromIntDB();
-  await writeIntDBNotesToSheet(projectNotes);
-  const csvArr = await getNotesWithPuppeteer(email, password);
-  // let result = [];
-  // fs.createReadStream('./bin/generatedBy_react-csv.csv')
-  // .pipe(csv())
-  // .on('data', (row) => {
-  //   result.push(row);
-  // })
-  // .on('end', () => {
-  //   console.log('CSV file successfully processed');
-  // });
-  await writeIntDBNotesToSheet(csvArr);
-})();
+// forgiveStrikesWithPuppeteer(1, email, password);
+scheduleWeekPrompt();
+// (async () => {
+// const projectNotes = await getProjectNotesFromIntDB();
+// await writeIntDBNotesToSheet(projectNotes);
+// const csvArr = await getNotesWithPuppeteer(email, password);
+// let result = [];
+// fs.createReadStream('./bin/generatedBy_react-csv.csv')
+// .pipe(csv())
+// .on('data', (row) => {
+//   result.push(row);
+// })
+// .on('end', () => {
+//   console.log('CSV file successfully processed');
+// });
+// await writeIntDBNotesToSheet(csvArr);
+// })();
 
 // hitSheets();
 // makeSheet();

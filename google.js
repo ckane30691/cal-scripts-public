@@ -115,7 +115,10 @@ async function getSchedule(resolver, auth) {
       orderBy: "startTime"
     },
     (err, res) => {
-      if (err) return err;
+      if (err) {
+        console.log(err);
+        return err;
+      }
       const events = res.data.items;
       resolver({
         events,
